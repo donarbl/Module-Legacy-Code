@@ -149,12 +149,21 @@ def do_follow():
         }
     )
 
-
+MAX_BLOOM_LENGTH = 280
 @jwt_required()
 def send_bloom():
     type_check_error = verify_request_fields({"content": str})
     if type_check_error is not None:
         return type_check_error
+
+    content = request.json ["content"]
+
+    if len(content) > MAX_BLOOM_LENGTH:
+        return make_response(
+            ({"success": False,
+              "message": f"blloms can't be longe than {MAX_BLOOM_LENGTH} symbols",
+              }, 400,)
+        )
 
     user = get_current_user()
 
