@@ -16,9 +16,7 @@ import {createHeading} from "../components/heading.mjs";
 
 function hashtagView(hashtag) {
   destroy();
-
-  apiService.getBloomsByHashtag(hashtag);
-
+// it will show the basic structure or loading msg
   renderOne(
     state.isLoggedIn,
     getLogoutContainer(),
@@ -28,6 +26,7 @@ function hashtagView(hashtag) {
   document
     .querySelector("[data-action='logout']")
     ?.addEventListener("click", handleLogout);
+
   renderOne(
     state.isLoggedIn,
     getLoginContainer(),
@@ -39,17 +38,25 @@ function hashtagView(hashtag) {
     ?.addEventListener("click", handleLogin);
 
   renderOne(
-    state.currentHashtag,
+   `#${hashtag}`,
     getHeadingContainer(),
     "heading-template",
     createHeading
   );
+  apiService.getBloomsByHashtag(hashtag).then(() => {
+    renderOne(
+      state.currentHashtag,
+      getHeadingContainer(),
+      "heading-template",
+      createHeading
+    );
   renderEach(
     state.hashtagBlooms || [],
     getTimelineContainer(),
     "bloom-template",
     createBloom
   );
+});
 }
 
 export {hashtagView};
