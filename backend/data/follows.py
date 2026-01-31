@@ -20,6 +20,15 @@ def follow(follower: User, followee: User):
             # Already following - treat as idempotent request.
             pass
 
+def unfollow(follower: User, followee: User):
+    with db_cursor() as cur:
+        cur.execute(
+            "DELETE FROM follows WHERE follower = %(follower_id)s AND followee = %(followee_id)s",
+            dict(
+                follower_id=follower.id,
+                followee_id=followee.id,
+            ),
+        )
 
 def get_followed_usernames(follower: User) -> List[str]:
     """get_followed_usernames returns a list of usernames followee follows."""
