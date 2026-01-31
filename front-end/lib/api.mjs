@@ -261,8 +261,9 @@ async function followUser(username) {
 
 async function unfollowUser(username) {
   try {
-    const data = await _apiRequest(`/unfollow/${username}`, {
+    const data = await _apiRequest("/unfollow", {
       method: "POST",
+      body: JSON.stringify({follow_username: username}),
     });
 
     if (data.success) {
