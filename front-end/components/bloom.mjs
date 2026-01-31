@@ -1,3 +1,5 @@
+import { apiService } from "../lib/api.mjs";
+
 /**
  * Create a bloom component
  * @param {string} template - The ID of the template to clone
@@ -20,6 +22,34 @@ const createBloom = (template, bloom) => {
   const bloomTime = bloomFrag.querySelector("[data-time]");
   const bloomTimeLink = bloomFrag.querySelector("a:has(> [data-time])");
   const bloomContent = bloomFrag.querySelector("[data-content]");
+  const rebloomInfo = bloomFrag.querySelector("[data-rebloom-info]");
+  const rebloomCountEl = bloomFrag.querySelector("[data-rebloom-count]");
+  const rebloomButton = bloomFrag.querySelector("[data-action='rebloom']");
+
+  if (bloom.original_bloom_id && bloom.original_sender) {
+    // This is a rebloom
+    rebloomInfo.textContent =
+      `Re-bloomed by ${bloom.sender}, originally by ${bloom.original_sender}`;
+  } else {
+    // Original bloom: no rebloom info
+    rebloomInfo.textContent = "";//it gives an origianl bloom, no rebllom information
+  }
+
+  if (bloom.rebloom_count && bloom.rebloom_count > 0) {
+    rebloomCountEl.textContent = `Re-bloomed ${bloom.rebloom_count} times`;
+  } else {
+    rebloomCountEl.textContent = "";
+  }
+
+  rebloomButton?.addEventListener("click", async () => {
+      try {
+        await apiService.rebloom(bloom.id); // implement this in your API service
+        // TODO: refresh timeline / current view after rebloom
+      } catch (error) {
+        console.error("Failed to re-bloom", error);
+      }
+    });
+
 
   bloomArticle.setAttribute("data-bloom-id", bloom.id);
   bloomUsername.setAttribute("href", `/profile/${bloom.sender}`);

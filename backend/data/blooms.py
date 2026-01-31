@@ -13,33 +13,93 @@ class Bloom:
     sender: User
     content: str
     sent_timestamp: datetime.datetime
+    original_bloom_id: Optional[int] = None
+    original_sender: Optional[User] = None
+    rebloom_count: int = 0
 
 MAX_BLOOM_LENGTH = 280 # this is to ensure the extra safety
 
 def add_bloom(*, sender: User, content: str) -> Bloom:
-
-    if len(content) > MAX_BLOOM_LENGTH: 
+    if len(content) > MAX_BLOOM_LENGTH:
         raise ValueError(f"blooms content is too long(max {MAX_BLOOM_LENGTH})")
 
     hashtags = [word[1:] for word in content.split(" ") if word.startswith("#")]
 
     now = datetime.datetime.now(tz=datetime.UTC)
-    bloom_id = int(now.timestamp() * 1000000)
+
     with db_cursor() as cur:
+        # Let the database generate the id
         cur.execute(
-            "INSERT INTO blooms (id, sender_id, content, send_timestamp) VALUES (%(bloom_id)s, %(sender_id)s, %(content)s, %(timestamp)s)",
+            """
+            INSERT INTO blooms (sender_id, content, send_timestamp)
+            VALUES (%(sender_id)s, %(content)s, %(timestamp)s)
+            RETURNING id
+            """,
             dict(
-                bloom_id=bloom_id,
                 sender_id=sender.id,
                 content=content,
-                timestamp=datetime.datetime.now(datetime.UTC),
+                timestamp=now,
             ),
         )
+        bloom_id = cur.fetchone()[0]
+
         for hashtag in hashtags:
             cur.execute(
                 "INSERT INTO hashtags (hashtag, bloom_id) VALUES (%(hashtag)s, %(bloom_id)s)",
                 dict(hashtag=hashtag, bloom_id=bloom_id),
             )
+
+    return Bloom(
+        id=bloom_id,
+        sender=sender.username,
+        content=content,
+        sent_timestamp=now,
+    )
+
+def add_rebloom(*, rebloomer: User, original_bloom: Bloom) -> Bloom:
+    now = datetime.datetime.now(tz=datetime.UTC)
+
+    with db_cursor() as cur:
+        # Insert rebloom without id, DB generates it
+        cur.execute(
+            """
+            INSERT INTO blooms (
+                sender_id, content, send_timestamp, original_bloom_id
+            )
+            VALUES (
+                %(sender_id)s, %(content)s, %(timestamp)s, %(original_bloom_id)s
+            )
+            RETURNING id
+            """,
+            dict(
+                sender_id=rebloomer.id,
+                content=original_bloom.content,
+                timestamp=now,
+                original_bloom_id=original_bloom.id,
+            ),
+        )
+        new_id = cur.fetchone()[0]
+
+        # Increase rebloom_count on the original
+        cur.execute(
+            """
+            UPDATE blooms
+            SET rebloom_count = COALESCE(rebloom_count, 0) + 1
+            WHERE id = %(id)s
+            """,
+            dict(id=original_bloom.id),
+        )
+
+    return Bloom(
+        id=new_id,
+        sender=rebloomer.username,
+        content=original_bloom.content,
+        sent_timestamp=now,
+        original_bloom_id=original_bloom.id,
+        original_sender=original_bloom.sender,
+        rebloom_count=(original_bloom.rebloom_count or 0) + 1,
+    )
+
 
 
 def get_blooms_for_user(
