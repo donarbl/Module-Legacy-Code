@@ -14,12 +14,7 @@ class Bloom:
     content: str
     sent_timestamp: datetime.datetime
 
-MAX_BLOOM_LENGTH = 280 # this is to ensure the extra safety
-
 def add_bloom(*, sender: User, content: str) -> Bloom:
-
-    if len(content) > MAX_BLOOM_LENGTH: 
-        raise ValueError(f"blooms content is too long(max {MAX_BLOOM_LENGTH})")
 
     hashtags = [word[1:] for word in content.split(" ") if word.startswith("#")]
 
