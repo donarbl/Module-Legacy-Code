@@ -31,57 +31,97 @@ const createBloom = (template, bloom) => {
       .body.childNodes
   );
 
+  // return bloomFrag;
+// };
+
+// function _formatHashtags(text) {
+//   if (!text) return text;
+//   return text.replace(
+//     /\B#[^#]+/g,
+//     (match) => `<a href="/hashtag/${match.slice(1)}">${match}</a>`
+//   );
+// }
+
+// function _formatTimestamp(timestamp) {
+//   if (!timestamp) return "";
+
+//   try {
+//     const date = new Date(timestamp);
+//     const now = new Date();
+//     const diffSeconds = Math.floor((now - date) / 1000);
+
+//     // Less than a minute
+//     if (diffSeconds < 60) {
+//       return `${diffSeconds}s`;
+//     }
+
+//     // Less than an hour
+//     const diffMinutes = Math.floor(diffSeconds / 60);
+//     if (diffMinutes < 60) {
+//       return `${diffMinutes}m`;
+//     }
+
+//     // Less than a day
+//     const diffHours = Math.floor(diffMinutes / 60);
+//     if (diffHours < 24) {
+//       return `${diffHours}h`;
+//     }
+
+//     // Less than a week
+//     const diffDays = Math.floor(diffHours / 24);
+//     if (diffDays < 7) {
+//       return `${diffDays}d`;
+//     }
+
+//     // Format as month and day for older dates
+//     return new Intl.DateTimeFormat("en-US", {
+//       month: "short",
+//       day: "numeric",
+//     }).format(date);
+//   } catch (error) {
+//     console.error("Failed to format timestamp:", error);
+//     return "";
+//   }
+// }
+
+// export {createBloom};
+if (bloom.original_sender) {
+    const rebloomed = document.createElement("p");
+    rebloomed.textContent = `🔁 Rebloomed from @${bloom.original_sender}`;
+    rebloomed.style.color = "green";
+    rebloomed.style.fontSize = "0.85em";
+    bloomArticle.prepend(rebloomed);
+  }
+
+  // Show rebloom count if > 0
+  if (bloom.rebloom_count > 0) {
+    const count = document.createElement("p");
+    count.textContent = `🔁 ${bloom.rebloom_count} rebloom${bloom.rebloom_count > 1 ? "s" : ""}`;
+    count.style.fontSize = "0.85em";
+    bloomArticle.appendChild(count);
+  }
+
+  // Add rebloom button
+  const rebloombtn = document.createElement("button");
+  rebloombtn.textContent = "🔁 Rebloom";
+  rebloombtn.addEventListener("click", async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("You must be logged in to rebloom");
+      return;
+    }
+    const res = await fetch(`/api/rebloom/${bloom.id}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert("Rebloomed!");
+    } else {
+      alert("Failed to rebloom");
+    }
+  });
+  bloomArticle.appendChild(rebloombtn);
+
   return bloomFrag;
 };
-
-function _formatHashtags(text) {
-  if (!text) return text;
-  return text.replace(
-    /\B#[^#]+/g,
-    (match) => `<a href="/hashtag/${match.slice(1)}">${match}</a>`
-  );
-}
-
-function _formatTimestamp(timestamp) {
-  if (!timestamp) return "";
-
-  try {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffSeconds = Math.floor((now - date) / 1000);
-
-    // Less than a minute
-    if (diffSeconds < 60) {
-      return `${diffSeconds}s`;
-    }
-
-    // Less than an hour
-    const diffMinutes = Math.floor(diffSeconds / 60);
-    if (diffMinutes < 60) {
-      return `${diffMinutes}m`;
-    }
-
-    // Less than a day
-    const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) {
-      return `${diffHours}h`;
-    }
-
-    // Less than a week
-    const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) {
-      return `${diffDays}d`;
-    }
-
-    // Format as month and day for older dates
-    return new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-    }).format(date);
-  } catch (error) {
-    console.error("Failed to format timestamp:", error);
-    return "";
-  }
-}
-
-export {createBloom};
